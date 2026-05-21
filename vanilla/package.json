@@ -1,0 +1,15 @@
+{
+  "name": "@signals/vanilla",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "bun --bun tsc --noEmit",
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch run src/index.ts"
+  },
+  "dependencies": {
+    "@signals/core": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

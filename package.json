@@ -1,0 +1,22 @@
+{
+  "name": "@kapoost/adcp-signals-monorepo",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "core",
+    "vanilla",
+    "cats"
+  ],
+  "scripts": {
+    "typecheck": "bun --bun tsc --noEmit -p .",
+    "typecheck:all": "bun -F '*' typecheck"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  }
+}
