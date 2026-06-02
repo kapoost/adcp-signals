@@ -6,3 +6,4 @@ node_modules/
 dist/
 .fly/
 *.tsbuildinfo
+NOTES-*.md
