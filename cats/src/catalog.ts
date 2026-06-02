@@ -7,6 +7,8 @@ export const CATALOG: readonly SignalDefinition[] = [
     description: 'Visitors who completed a feline-personality quiz.',
     signal_type: 'owned',
     coverage_percentage: 100,
+    subject_type: 'individual',
+    resolution_method: 'browser',
   },
   {
     id: 'purr_persona_angel',
@@ -14,6 +16,8 @@ export const CATALOG: readonly SignalDefinition[] = [
     description: 'Result: low-arousal, sociable cat (The Velvet Whisper).',
     signal_type: 'owned',
     coverage_percentage: 22,
+    subject_type: 'contextual',
+    resolution_method: 'content_signal',
   },
   {
     id: 'purr_persona_hunter',
@@ -21,6 +25,8 @@ export const CATALOG: readonly SignalDefinition[] = [
     description: 'Result: bold, exploratory cat (The Daring Explorer).',
     signal_type: 'owned',
     coverage_percentage: 18,
+    subject_type: 'contextual',
+    resolution_method: 'content_signal',
   },
   {
     id: 'purr_persona_tornado',
@@ -28,6 +34,8 @@ export const CATALOG: readonly SignalDefinition[] = [
     description: 'Result: chaotic, hyperactive cat (The Tiny Tornado).',
     signal_type: 'owned',
     coverage_percentage: 17,
+    subject_type: 'contextual',
+    resolution_method: 'content_signal',
   },
   {
     id: 'purr_persona_trickster',
@@ -35,6 +43,8 @@ export const CATALOG: readonly SignalDefinition[] = [
     description: 'Result: clever, rule-breaking cat (The Sly Trickster).',
     signal_type: 'owned',
     coverage_percentage: 23,
+    subject_type: 'contextual',
+    resolution_method: 'content_signal',
   },
   {
     id: 'purr_persona_tyrant',
@@ -42,5 +52,7 @@ export const CATALOG: readonly SignalDefinition[] = [
     description: 'Result: dominant, defensive cat (The Tiny Tyrant).',
     signal_type: 'owned',
     coverage_percentage: 20,
+    subject_type: 'contextual',
+    resolution_method: 'content_signal',
   },
 ] as const;

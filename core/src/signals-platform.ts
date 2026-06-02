@@ -100,6 +100,8 @@ export function createSignalsPlatform(
           signal_type: s.signal_type,
           data_provider: dataProvider.name,
           coverage_percentage: s.coverage_percentage,
+          ...(s.subject_type && { subject_type: s.subject_type }),
+          ...(s.resolution_method && { resolution_method: s.resolution_method }),
           deployments: [buildDeployment(true)],
           pricing_options: [
             {

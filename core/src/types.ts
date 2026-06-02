@@ -1,3 +1,13 @@
+export type SignalSubjectType = 'individual' | 'household' | 'business' | 'contextual' | 'none';
+
+export type SignalResolutionMethod =
+  | 'deterministic_id'
+  | 'probabilistic_device'
+  | 'browser'
+  | 'geographic'
+  | 'content_signal'
+  | 'mixed';
+
 export interface SignalDefinition {
   id: string;
   name: string;
@@ -6,6 +16,8 @@ export interface SignalDefinition {
   coverage_percentage: number;
   cpm?: number;
   currency?: string;
+  subject_type?: SignalSubjectType;
+  resolution_method?: SignalResolutionMethod;
 }
 
 export interface DataProvider {
