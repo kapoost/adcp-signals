@@ -18,6 +18,9 @@ export interface SignalDefinition {
   currency?: string;
   subject_type?: SignalSubjectType;
   resolution_method?: SignalResolutionMethod;
+  /** ISO 8601 timestamp of when this definition record was last updated.
+   * Freshness of the record, not the underlying data/model. (adcp #5249) */
+  last_updated?: string;
 }
 
 export interface DataProvider {

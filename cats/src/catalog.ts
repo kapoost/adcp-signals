@@ -1,5 +1,10 @@
 import type { SignalDefinition } from '@signals/core';
 
+// Catalog record publication date. Bump when changing any signal's
+// definition fields (description, subject_type, etc.) — surfaces as
+// `last_updated` on every record so buyer agents can detect drift.
+const CATALOG_PUBLISHED_AT = '2026-06-05T00:00:00Z';
+
 export const CATALOG: readonly SignalDefinition[] = [
   {
     id: 'purr_cat_owner',
@@ -9,6 +14,7 @@ export const CATALOG: readonly SignalDefinition[] = [
     coverage_percentage: 100,
     subject_type: 'individual',
     resolution_method: 'browser',
+    last_updated: CATALOG_PUBLISHED_AT,
   },
   {
     id: 'purr_persona_angel',
@@ -18,6 +24,7 @@ export const CATALOG: readonly SignalDefinition[] = [
     coverage_percentage: 22,
     subject_type: 'contextual',
     resolution_method: 'content_signal',
+    last_updated: CATALOG_PUBLISHED_AT,
   },
   {
     id: 'purr_persona_hunter',
@@ -27,6 +34,7 @@ export const CATALOG: readonly SignalDefinition[] = [
     coverage_percentage: 18,
     subject_type: 'contextual',
     resolution_method: 'content_signal',
+    last_updated: CATALOG_PUBLISHED_AT,
   },
   {
     id: 'purr_persona_tornado',
@@ -36,6 +44,7 @@ export const CATALOG: readonly SignalDefinition[] = [
     coverage_percentage: 17,
     subject_type: 'contextual',
     resolution_method: 'content_signal',
+    last_updated: CATALOG_PUBLISHED_AT,
   },
   {
     id: 'purr_persona_trickster',
@@ -45,6 +54,7 @@ export const CATALOG: readonly SignalDefinition[] = [
     coverage_percentage: 23,
     subject_type: 'contextual',
     resolution_method: 'content_signal',
+    last_updated: CATALOG_PUBLISHED_AT,
   },
   {
     id: 'purr_persona_tyrant',
@@ -54,5 +64,6 @@ export const CATALOG: readonly SignalDefinition[] = [
     coverage_percentage: 20,
     subject_type: 'contextual',
     resolution_method: 'content_signal',
+    last_updated: CATALOG_PUBLISHED_AT,
   },
 ] as const;

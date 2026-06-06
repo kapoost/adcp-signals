@@ -23,4 +23,12 @@ describe('cats catalog scope discriminators', () => {
     expect(subjects.has('contextual')).toBe(true);
     expect(subjects.has('individual')).toBe(true);
   });
+
+  test('every catalog entry declares last_updated (adcp #5249)', () => {
+    for (const s of CATALOG) {
+      expect(s.last_updated).toBeDefined();
+      // ISO 8601 date-time, ends with Z
+      expect(s.last_updated).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    }
+  });
 });

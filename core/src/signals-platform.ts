@@ -102,6 +102,7 @@ export function createSignalsPlatform(
           coverage_percentage: s.coverage_percentage,
           ...(s.subject_type && { subject_type: s.subject_type }),
           ...(s.resolution_method && { resolution_method: s.resolution_method }),
+          ...(s.last_updated && { last_updated: s.last_updated }),
           deployments: [buildDeployment(true)],
           pricing_options: [
             {
