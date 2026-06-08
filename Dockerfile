@@ -6,11 +6,17 @@
 FROM oven/bun:1.3.14-alpine AS install
 WORKDIR /app
 
-# Workspace manifest + member manifests. Need them all before `bun install`
-# so the workspace resolver can wire @signals/core ↔ @signals/cats.
+# Bun workspace resolution at install time pins @signals/core to the
+# real on-disk shape of /app/core — so the full sources (not just
+# package.json) need to be present BEFORE `bun install`. Otherwise the
+# cached resolution captures an empty workspace member and the runtime
+# stage gets "Cannot find module '@signals/core'" on Bun startup.
 COPY package.json bun.lock tsconfig.json ./
-COPY core/package.json ./core/
-COPY cats/package.json ./cats/
+COPY core ./core
+COPY cats ./cats
+# Vanilla's manifest only — workspaces[] requires every listed member
+# to exist, but vanilla's source is reference-only and not deployed.
+COPY vanilla/package.json ./vanilla/
 
 RUN bun install --frozen-lockfile --production
 
@@ -20,13 +26,10 @@ WORKDIR /app
 # Non-root user (defense in depth).
 RUN addgroup -S adcp && adduser -S -G adcp -u 10001 adcp
 
-# Hoisted node_modules from install stage.
-COPY --from=install --chown=adcp:adcp /app/node_modules ./node_modules
-
-# Workspace source: root config + core + cats. Vanilla skipped.
-COPY --chown=adcp:adcp package.json bun.lock tsconfig.json ./
-COPY --chown=adcp:adcp core ./core
-COPY --chown=adcp:adcp cats ./cats
+# Whole resolved workspace from install stage — node_modules carries
+# the Bun-cached resolution that points at /app/core for @signals/core,
+# and core/ + cats/ are already in place at the expected paths.
+COPY --from=install --chown=adcp:adcp /app /app
 
 USER adcp
 
@@ -35,5 +38,4 @@ ENV PORT=3011 \
 
 EXPOSE 3011
 
-# Bun runs TS directly — no separate build step.
 CMD ["bun", "run", "cats/src/index.ts"]

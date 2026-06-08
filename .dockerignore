@@ -14,4 +14,9 @@ dist
 .github
 README.md
 NOTES-*.md
-vanilla
+# Vanilla is a spec-conformance reference, not deployed — only its
+# package.json reaches the install stage so the workspace resolver
+# can wire root deps; everything else is dropped from the context.
+vanilla/src
+vanilla/tsconfig.json
+vanilla/tsconfig.tsbuildinfo
