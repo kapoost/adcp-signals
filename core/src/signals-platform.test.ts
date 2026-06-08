@@ -11,17 +11,34 @@ const PROVIDER: DataProvider = {
 const minimalReq = {} as Parameters<ReturnType<typeof createSignalsPlatform>['getSignals']>[0];
 const minimalCtx = {} as Parameters<ReturnType<typeof createSignalsPlatform>['getSignals']>[1];
 
-// SDK 7.11.0's generated GetSignalsResponse type lags behind HEAD spec —
-// `subject_type`, `resolution_method`, and `last_updated` aren't yet in the
-// emitted signal-item shape. Extend the test view so assertions stay typed
-// without `as any` everywhere. Drop this when the SDK type-gen catches up.
-type SignalResponseExt = Awaited<
-  ReturnType<ReturnType<typeof createSignalsPlatform>['getSignals']>
->['signals'][number] & {
+// SDK 9.0.0-beta.27's getSignals returns GetSignalsHandlerResult — a union
+// of the sync payload (what Cats actually returns) and a TaskHandoff branch
+// (for async semantic discovery, which we don't use). expectPayload() narrows
+// to the payload variant at runtime via `'signals' in resp`. The static type
+// is a hand-rolled shape because Exclude<…, TaskHandoff<unknown>> resolves
+// to `never` on some test sites due to SDK type-gen quirks; the wire shape
+// (signals + pagination) is stable and small enough to declare directly.
+//
+// SignalResponseExt also covers spec-shipped optional fields that the
+// generated TS GetSignalsResponse type lags on (subject_type,
+// resolution_method, last_updated ship as Zod schemas but not yet in the
+// TS interfaces). Drop the helper when SDK type-gen catches up.
+type SignalItemView = {
+  signal_agent_segment_id: string;
+  value_type?: string;
   subject_type?: string;
   resolution_method?: string;
   last_updated?: string;
+  [key: string]: unknown;
 };
+type PayloadView = { signals: SignalItemView[]; pagination: { has_more: boolean; total_count: number; cursor?: string } };
+function expectPayload(resp: unknown): PayloadView {
+  if (resp == null || typeof resp !== 'object' || !('signals' in resp)) {
+    throw new Error('expected sync GetSignalsPayload, got TaskHandoff');
+  }
+  return resp as PayloadView;
+}
+type SignalResponseExt = SignalItemView;
 
 describe('signals-platform get_signals response shape', () => {
   test('emits subject_type and resolution_method when present in catalog entry', async () => {
@@ -37,7 +54,7 @@ describe('signals-platform get_signals response shape', () => {
       },
     ];
     const platform = createSignalsPlatform(catalog, PROVIDER);
-    const resp = await platform.getSignals(minimalReq, minimalCtx);
+    const resp = expectPayload(await platform.getSignals(minimalReq, minimalCtx));
     const sig = resp.signals[0]! as SignalResponseExt;
     expect(sig.subject_type).toBe('contextual');
     expect(sig.resolution_method).toBe('content_signal');
@@ -54,7 +71,7 @@ describe('signals-platform get_signals response shape', () => {
       },
     ];
     const platform = createSignalsPlatform(catalog, PROVIDER);
-    const resp = await platform.getSignals(minimalReq, minimalCtx);
+    const resp = expectPayload(await platform.getSignals(minimalReq, minimalCtx));
     const sig = resp.signals[0]! as SignalResponseExt;
     expect('subject_type' in sig).toBe(false);
     expect('resolution_method' in sig).toBe(false);
@@ -80,7 +97,7 @@ describe('signals-platform get_signals response shape', () => {
       },
     ];
     const platform = createSignalsPlatform(catalog, PROVIDER);
-    const resp = await platform.getSignals(minimalReq, minimalCtx);
+    const resp = expectPayload(await platform.getSignals(minimalReq, minimalCtx));
     const dated = resp.signals.find((s) => s.signal_agent_segment_id === 'dated')! as SignalResponseExt;
     const undated = resp.signals.find((s) => s.signal_agent_segment_id === 'undated')! as SignalResponseExt;
     expect(dated.last_updated).toBe(ts);
@@ -92,7 +109,7 @@ describe('signals-platform get_signals response shape', () => {
       { id: 'x', name: 'X', description: 'x', signal_type: 'owned', coverage_percentage: 50 },
     ];
     const platform = createSignalsPlatform(catalog, PROVIDER);
-    const resp = await platform.getSignals(minimalReq, minimalCtx);
+    const resp = expectPayload(await platform.getSignals(minimalReq, minimalCtx));
     expect(resp.signals[0]!.value_type).toBe('binary');
   });
 
@@ -116,7 +133,7 @@ describe('signals-platform get_signals response shape', () => {
       },
     ];
     const platform = createSignalsPlatform(catalog, PROVIDER);
-    const resp = await platform.getSignals(minimalReq, minimalCtx);
+    const resp = expectPayload(await platform.getSignals(minimalReq, minimalCtx));
     const withScope = resp.signals.find((s) => s.signal_agent_segment_id === 'with_scope')! as SignalResponseExt;
     const withoutScope = resp.signals.find((s) => s.signal_agent_segment_id === 'without_scope')! as SignalResponseExt;
     expect(withScope.subject_type).toBe('individual');

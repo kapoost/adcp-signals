@@ -1,9 +1,7 @@
 import { defineSignalsPlatform, type SignalsPlatform } from '@adcp/sdk/server';
 import type {
   GetSignalsRequest,
-  GetSignalsResponse,
   ActivateSignalRequest,
-  ActivateSignalSuccess,
   Deployment,
 } from '@adcp/sdk';
 import type { DataProvider, SignalDefinition, SignalsAccountMeta } from './types.ts';
@@ -43,7 +41,7 @@ export function createSignalsPlatform(
   });
 
   return defineSignalsPlatform<SignalsAccountMeta>({
-    async getSignals(req: GetSignalsRequest, _ctx): Promise<GetSignalsResponse> {
+    async getSignals(req: GetSignalsRequest, _ctx) {
       const r = req as unknown as {
         signal_spec?: string;
         signal_ids?: Array<
@@ -116,7 +114,7 @@ export function createSignalsPlatform(
       };
     },
 
-    async activateSignal(_req: ActivateSignalRequest, _ctx): Promise<ActivateSignalSuccess> {
+    async activateSignal(_req: ActivateSignalRequest, _ctx) {
       return {
         deployments: [buildDeployment(true)],
       };

@@ -23,4 +23,9 @@ primary_region = "fra"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  # 512mb (not the seller's 256mb) — SDK 9.x cold start crashes silently
+  # under 256mb on Fly's shared-cpu-1x; the proxy times out before app
+  # logs flush, so the failure is hard to attribute. Diagnosed during the
+  # 7.10.1 → 9.0.0-beta.27 bump on 2026-06-08. Drop back to 256mb only
+  # after confirming a future release fits the smaller envelope.
+  memory = "512mb"
