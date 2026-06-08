@@ -18,7 +18,7 @@ startSignalsAgent({
   authToken: env.ADCP_AUTH_TOKEN,
   dataProvider: {
     name: 'Purrsonality',
-    domain: 'purrsonality.pages.dev',
+    domain: 'purrsonality.rocketscience.pl',
     internal_platform: 'purrsonality_internal',
   },
   catalog: CATALOG,
