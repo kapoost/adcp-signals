@@ -28,6 +28,13 @@ export function startSignalsAgent(config: SignalsAgentConfig): void {
   const taskRegistry = createInMemoryTaskRegistry();
   const stateStore = new InMemoryStateStore();
 
+  // SDK's serve() only handles /mcp + /.well-known/oauth-protected-resource/mcp.
+  // We need /.well-known/healthz too (Fly health checks, AAO probe liveness),
+  // so we run the SDK on an internal port and front it with a Bun.serve proxy
+  // on config.port that adds healthz and forwards everything else.
+  const sdkPort = config.port + 100;
+  const startedAt = Date.now();
+
   serve(
     ({ taskStore }) =>
       createAdcpServerFromPlatform(platform, {
@@ -45,7 +52,14 @@ export function startSignalsAgent(config: SignalsAgentConfig): void {
         },
       }),
     {
-      port: config.port,
+      port: sdkPort,
+      onListening: () => {
+        startPublicProxy({
+          publicPort: config.port,
+          sdkPort,
+          startedAt,
+        });
+      },
       authenticate: verifyApiKey({
         keys: {
           [config.authToken]: { principal: 'agent-buyer' },
@@ -58,4 +72,58 @@ export function startSignalsAgent(config: SignalsAgentConfig): void {
 
   console.log(`${config.name} listening on ${config.publicBaseUrl}/mcp`);
   console.log(`Catalog: ${config.catalog.length} signal${config.catalog.length === 1 ? '' : 's'}`);
+}
+
+function startPublicProxy(opts: {
+  publicPort: number;
+  sdkPort: number;
+  startedAt: number;
+}): void {
+  Bun.serve({
+    port: opts.publicPort,
+    async fetch(req): Promise<Response> {
+      const url = new URL(req.url);
+
+      // Liveness probe — unauthenticated, never touches the SDK.
+      if (req.method === 'GET' && url.pathname === '/.well-known/healthz') {
+        return Response.json(
+          { ok: true, uptime_ms: Date.now() - opts.startedAt },
+          { headers: { 'Cache-Control': 'no-store' } },
+        );
+      }
+
+      // Forward everything else to the SDK on the internal port.
+      const target = `http://127.0.0.1:${opts.sdkPort}${url.pathname}${url.search}`;
+      const fwdHeaders = new Headers(req.headers);
+      fwdHeaders.delete('host');
+      fwdHeaders.delete('connection');
+      fwdHeaders.delete('content-length');
+
+      // Buffer body up-front rather than streaming with duplex:'half' — the
+      // streamed forward to localhost has known issues on Linux Bun that
+      // break MCP initialize POSTs (same workaround as seller proxy).
+      const methodHasBody = !['GET', 'HEAD', 'OPTIONS'].includes(req.method);
+      const fetchInit: RequestInit = {
+        method: req.method,
+        headers: fwdHeaders,
+      };
+      if (methodHasBody) {
+        const bodyBuf = await req.arrayBuffer();
+        if (bodyBuf.byteLength > 0) {
+          fetchInit.body = bodyBuf;
+        }
+      }
+
+      try {
+        const upstream = await fetch(target, fetchInit);
+        return new Response(upstream.body, {
+          status: upstream.status,
+          statusText: upstream.statusText,
+          headers: upstream.headers,
+        });
+      } catch {
+        return Response.json({ error: 'upstream_unavailable' }, { status: 502 });
+      }
+    },
+  });
 }
