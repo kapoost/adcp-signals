@@ -19,6 +19,13 @@ export function startSignalsAgent(config: SignalsAgentConfig): void {
   const platform = definePlatform<null, SignalsAccountMeta>({
     capabilities: {
       specialisms: ['signal-owned'] as const,
+      // Advertise release-precision AdCP versions we speak. Slot landed in
+      // SDK 9.0.0 via PR #2201 closing #2199. AAO comply runner gates
+      // prerelease eval (compliance_target=3.1-rc) on this advertisement —
+      // without it `evaluate_agent_quality` refuses with "(none advertised)".
+      // We honour 3.0 (badge-eligible) AND 3.1-rc (SDK 9.2.x natively emits
+      // the rc14+ envelope shape with status / context echo / adcp_version).
+      supported_versions: ['3.0', '3.1-rc'] as const,
       config: null,
     },
     accounts: accountStore,
