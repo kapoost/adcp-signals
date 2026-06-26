@@ -119,23 +119,43 @@ export function createSignalsPlatform(
       // destinations[] = [{type:'agent', agent_url: 'https://wonderstruck...'}]
       // and validates deployments[0].type=='agent', agent_url echo,
       // activation_key present (type:'key_value'), deployed_at, is_live:true.
-      // Earlier impl ignored destinations and always returned a platform
-      // deployment, failing the storyboard. Map each destination to a
-      // matching deployment shape, generating an activation_key keyed off
-      // the signal_agent_segment_id.
+      // 3.1 error_compliance_signals: nieistniejący signal_agent_segment_id
+      // musi rejected'ować z REFERENCE_NOT_FOUND lub INVALID_REQUEST. SDK
+      // wrapErrorArm wykrywa return shape `{errors: [...]}` i ustawia
+      // isError:true + projektuje sanitized errors[] na structuredContent.
       const r = req as unknown as {
         signal_agent_segment_id?: string;
         destinations?: Array<
           | { type: 'platform'; platform: string; account?: string }
           | { type: 'agent'; agent_url: string; account?: string }
         >;
+        context?: { correlation_id?: string };
       };
-      const segmentId = r.signal_agent_segment_id ?? 'unknown_segment';
+      const segmentId = r.signal_agent_segment_id;
+      const echoContext = r.context;
+
+      if (!segmentId || !catalog.some((s) => s.id === segmentId)) {
+        return {
+          errors: [
+            {
+              code: 'REFERENCE_NOT_FOUND',
+              message: `Unknown signal_agent_segment_id: ${segmentId ?? '<missing>'}`,
+              field: 'signal_agent_segment_id',
+              recovery: 'correctable',
+            },
+          ],
+          ...(echoContext && { context: echoContext }),
+        } as never;
+      }
+
       const nowIso = new Date().toISOString();
       const destinations = r.destinations ?? [];
 
       if (destinations.length === 0) {
-        return { deployments: [buildDeployment(true)] };
+        return {
+          deployments: [buildDeployment(true)],
+          ...(echoContext && { context: echoContext }),
+        };
       }
 
       const deployments: Deployment[] = destinations.map((dest) => {
@@ -165,7 +185,10 @@ export function createSignalsPlatform(
           deployed_at: nowIso,
         };
       });
-      return { deployments };
+      return {
+        deployments,
+        ...(echoContext && { context: echoContext }),
+      };
     },
   });
 }
