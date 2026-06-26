@@ -114,10 +114,58 @@ export function createSignalsPlatform(
       };
     },
 
-    async activateSignal(_req: ActivateSignalRequest, _ctx) {
-      return {
-        deployments: [buildDeployment(true)],
+    async activateSignal(req: ActivateSignalRequest, _ctx) {
+      // 3.0 signal_owned/agent_activation: storyboard sends
+      // destinations[] = [{type:'agent', agent_url: 'https://wonderstruck...'}]
+      // and validates deployments[0].type=='agent', agent_url echo,
+      // activation_key present (type:'key_value'), deployed_at, is_live:true.
+      // Earlier impl ignored destinations and always returned a platform
+      // deployment, failing the storyboard. Map each destination to a
+      // matching deployment shape, generating an activation_key keyed off
+      // the signal_agent_segment_id.
+      const r = req as unknown as {
+        signal_agent_segment_id?: string;
+        destinations?: Array<
+          | { type: 'platform'; platform: string; account?: string }
+          | { type: 'agent'; agent_url: string; account?: string }
+        >;
       };
+      const segmentId = r.signal_agent_segment_id ?? 'unknown_segment';
+      const nowIso = new Date().toISOString();
+      const destinations = r.destinations ?? [];
+
+      if (destinations.length === 0) {
+        return { deployments: [buildDeployment(true)] };
+      }
+
+      const deployments: Deployment[] = destinations.map((dest) => {
+        if (dest.type === 'agent') {
+          return {
+            type: 'agent',
+            agent_url: dest.agent_url,
+            ...(dest.account && { account: dest.account }),
+            is_live: true,
+            activation_key: {
+              type: 'key_value',
+              key: 'adcp_signal_id',
+              value: segmentId,
+            },
+            deployed_at: nowIso,
+          };
+        }
+        return {
+          type: 'platform',
+          platform: dest.platform,
+          ...(dest.account && { account: dest.account }),
+          is_live: true,
+          activation_key: {
+            type: 'segment_id',
+            segment_id: segmentId,
+          },
+          deployed_at: nowIso,
+        };
+      });
+      return { deployments };
     },
   });
 }
