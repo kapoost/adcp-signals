@@ -80,6 +80,12 @@ export function createSignalsPlatform(
       const hasMore = nextOffset < filtered.length;
 
       return {
+        // 3.1 required on responses carrying `signals`: declare whether the
+        // payload is keyable under the public cache or scoped to the caller's
+        // account. Our catalog is identical for every caller (no per-account
+        // overlays) → `"public"`. Switch to `"account"` if per-account pricing
+        // or coverage ever lands.
+        cache_scope: 'public' as const,
         pagination: {
           has_more: hasMore,
           ...(hasMore && { cursor: encodeCursor(nextOffset) }),
