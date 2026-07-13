@@ -8,7 +8,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@adcp/sdk": "9.2.2",
+    "@adcp/sdk": "11.2.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.4.3"
   }
