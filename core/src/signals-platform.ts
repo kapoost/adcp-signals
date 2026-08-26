@@ -155,12 +155,33 @@ export function createSignalsPlatform(
         !!segmentId &&
         (catalog.some((s) => s.id === segmentId) || isComplianceFixture(segmentId));
 
-      if (!segmentId || isExplicitNonexistent(segmentId) || !known) {
+      // A missing field and an unknown id are different failures and the codes
+      // are not interchangeable. Omitting a required field makes the request
+      // malformed — there is nothing to look up — so it is INVALID_REQUEST;
+      // error_compliance_signals asserts exactly that and we were answering
+      // REFERENCE_NOT_FOUND, which tells a buyer to go find a valid id when the
+      // real problem is that it never sent one. A well-formed reference that
+      // resolves to nothing stays REFERENCE_NOT_FOUND.
+      if (!segmentId) {
+        return {
+          errors: [
+            {
+              code: 'INVALID_REQUEST',
+              message: 'signal_agent_segment_id is required',
+              field: 'signal_agent_segment_id',
+              recovery: 'correctable',
+            },
+          ],
+          ...(echoContext && { context: echoContext }),
+        } as never;
+      }
+
+      if (isExplicitNonexistent(segmentId) || !known) {
         return {
           errors: [
             {
               code: 'REFERENCE_NOT_FOUND',
-              message: `Unknown signal_agent_segment_id: ${segmentId ?? '<missing>'}`,
+              message: `Unknown signal_agent_segment_id: ${segmentId}`,
               field: 'signal_agent_segment_id',
               recovery: 'correctable',
             },
