@@ -1,0 +1,30 @@
+name: ci
+
+# This repository had no gate at all until 2026-09-16. The cost of that is
+# documented next door: in abzu-orchestrator a test went red, survived a
+# commit editing the same file plus four SDK bumps, and was found by hand
+# four months later — because its workflow carried a monorepo path filter
+# that could never match and therefore never ran.
+#
+# typecheck is the only step this repo can run today: package.json declares
+# no test or build script. That makes the gate narrow, not useless — every
+# wire-shape fix in this agent is hand-written and tsc is the only thing
+# standing between a typo and production. Add the other steps here as soon
+# as the scripts exist.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
